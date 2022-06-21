@@ -1,0 +1,63 @@
+{
+      "startPct": 0.0,
+      "endPct": 1.0,
+      "runPct": 0.25,
+      "stepPct": 0.10,
+      "sampleLength": 0.0,
+      "sleep": [1,1,1,1,1,1,1,1],
+      "rate": [1,1,1,1,1,1,1,1],
+      "amp": [0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25],
+      "pan": [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
+      "effects": [
+        {
+          "name":"echo",
+          "params": {
+            "Phase": 0.50,
+            "Mix": 0.75,
+            "Decay": 0.5
+          },
+          "status": 1,
+          "runs": [1,1,1,0,0,0,0,0]
+        },
+        {
+          "name":"reverb",
+          "params": {
+            "Room": 0.50,
+            "Mix": 0.5,
+            "Damp": 0.5
+          },
+          "status": 0,
+          "runs": [1,1,1,0,0,0,0,0]
+        },
+        {
+          "name": "distortion",
+          "params": {
+            "Amp": 0.50,
+            "Mix": 0.75,
+            "Distort": 0.5
+          },
+          "status": 1,
+          "runs": [1,1,1,0,0,0,0,0]
+        },
+        {
+          "name":"lowpass",
+          "params": {
+            "Amp": 0.50,
+            "Mix": 0.75,
+            "Cutoff": 0.5
+          },
+          "status": 0,
+          "runs": [1,1,1,0,0,0,0,0]
+        },
+        {
+          "name":"highpass",
+          "params": {
+            "Amp": 0.50,
+            "Mix": 0.75,
+            "Cutoff": 0.5
+          },
+          "status": 1,
+          "runs": [1,1,1,0,0,0,0,0]
+        }
+      ]
+}

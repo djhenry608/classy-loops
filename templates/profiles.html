@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- ClassyIndex -->
+  <head>
+    {% include 'common_header.inc' %}
+  <title>Profiles</title>
+</head>
+<body class="drawer drawer--left">
+  <span style="font-size: 2em;margin-left:72px;"><img width="40px" src="/static/images/peppermint.svg"/> Classy Server </span>
+    <span>CLS: Collaborative Loop Server</span>
+
+    {% include 'menu.inc' %}
+
+  <!-- content -->
+  <main role="main">
+    <section class="item">
+      <h2>Load a Profile</h2>
+    <form>
+      <label for="profileList">Select profile:</label><br/>
+      <select id="profileList" name="profileList" size="12">
+      {% for result in profileList %}
+          <option value="{{ result['ID'] }}">{{ result['optionDesc'] }}</option>
+      {% endfor %}
+     </select><br/>
+      <button onclick="loadProfile();">Load Profile</button>
+    </form>
+    {% if messages|length > 0 %}
+     <h3>Messages:<h3><span style="font-color:yellow"> {{ messages }}</span>
+    {% endif %}
+    </section>
+  </main>
+
+  {% include 'common_footer.inc' %}
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- ClassyIndex -->
+  <head>
+    {% include 'common_header.inc' %}
+  <title>Admin Page</title>
+</head>
+<body class="drawer drawer--left">
+  <span style="font-size: 2em;margin-left:72px;"><img width="40px" src="/static/images/peppermint.svg"/> Classy Server </span>
+    <span>CLS: Collaborative Loop Server</span>
+
+    {% include 'menu.inc' %}
+
+  <!-- content -->
+  <main role="main">
+    <section class="item">
+
+    <form>
+      <label for="profileName">Profile Name:</label>
+      <input type="text" id="profileName" name="profileName" value="{{ profileName }}" /><br/>
+       <h3>Select 1 to 4 samples (wav files):</h3>
+      <label for="sampleFiles">Select files:</label><br/>
+      <select id="sampleFiles" name="sampleFiles" size="12" multiple>
+      {% for result in allSamples %}
+        {% if result in selectedSampleList %}
+          <option value="{{ result }}" selected>{{ result }}</option>
+        {% else %}
+          <option value="{{ result }}">{{ result }}</option>
+        {% endif %}
+      {% endfor %}
+     </select><br/>
+      <button onclick="saveProfile()">Create New Profile</button>
+    </form>
+    {% if messages|length > 0 %}
+     <h3>Messages:<h3><span style="font-color:yellow"> {{ messages }}</span>
+    {% endif %}
+    </section>
+  </main>
+
+  {% include 'common_footer.inc' %}
+
+</body>
+</html>

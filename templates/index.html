@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-pink">
+<!-- ClassyIndex -->
+  <head>
+
+    {% include 'common_header.inc' %}
+    
+    <title>Main Page</title>
+</head>
+<body class="drawer drawer--left">
+  <span style="font-size: 2em;margin-left:72px;"><img width="40px" src="/static/images/peppermint.svg"/> Classy Server </span>
+    <span>CLS: Collaborative Loop Server</span>
+  
+    {% include 'menu.inc' %}
+  <!-- content -->
+  <main role="main">
+    <section class="item">
+
+    <canvas id="qr-code"></canvas>
+    {% if messages|length > 0 %}
+       <h3>Messages:<h3><span style="font-color:yellow"> {{ messages }}</span>
+      {% endif %}
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <h3>Loops to load: {{ loops|length }}</h3>
+    {% if loops|length > 0 %}
+    <p>Scan the QR code to load the next loop.</p>
+    <script>
+      /* JS comes here */
+      var qr;
+      (function() {
+                    qr = new QRious({
+                    element: document.getElementById('qr-code'),
+                    size: 200,
+                    value: 'http://{{ myIP }}:8080/loadNextLoop'
+                });
+            })();
+            
+            function generateQRCode() {
+                var qrtext = document.getElementById("qr-text").value;
+                document.getElementById("qr-result").innerHTML = "QR code for " + qrtext +":";
+                alert(qrtext);
+                qr.set({
+                    foreground: 'black',
+                    size: 200,
+                    value: qrtext
+                });
+            }
+    </script>
+    {% endif %}
+    </section>
+  </main>
+ 
+   {% include 'common_footer.inc' %}
+
+</body>
+</html>

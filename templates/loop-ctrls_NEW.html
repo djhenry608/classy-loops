@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        <meta name="color-scheme" content="dark light">
+        <!--
+        Required for browsers that do not yet support the latest technologies.
+        http://webcomponents.org/
+        https://github.com/webcomponents/webcomponentsjs/releases
+        -->
+        <!--
+        <script type="text/javascript">
+          if (!document.registerElement) {
+          document.writeln(decodeURI('%3Cscript%20src=%22https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/0.7.12/webcomponents.min.js%22%20type=%22text/javascript%22%3E%3C/script%3E'));
+          }
+        </script>
+        -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/0.7.12/webcomponents.min.js" type="text/javascript"></script>
+        <script src="/static/js/xknob.js" type="text/javascript" async></script>
+        <link href="/static/css/xknob.css" type="text/css" rel="stylesheet">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+        <!-- for jquery accordion -->
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+        <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+        <script>
+        $( function() {
+          $( "#accordion" ).accordion({
+            active: 5
+          });
+        } );
+        </script>
+        <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" crossorigin="anonymous"></script>
+        <!-- end links for Jquery accordion -->
+        <style type="text/css">
+            body {
+              padding: 0;
+              margin: 0;
+              font-family:verdana;
+            }
+
+            #canvas {
+              margin-top: 1em;
+              width:  100%;
+              background-image: url('/{{ sample_image }}');
+              background-repeat: no-repeat; /* Do not repeat the image */
+              /*background-size: cover; */  /* Resize the background image to cover the entire container */
+              background-size: 100% 100%;
+              background-color: white;
+            }
+
+            svg:not(:root) {
+              display: block;
+            }
+
+            .grKnob { width: 80%; height: auto; margin-left: 6px;}
+
+            .presetBtn {
+               width: 80%;
+            }
+
+            input[type='number']{
+                width: 4em;
+            } 
+
+            .switch {
+              position: relative;
+              display: inline-block;
+              width: 60px;
+              height: 34px;
+            }
+
+            .switch input { 
+              opacity: 0;
+              width: 0;
+              height: 0;
+            }
+
+            .slider {
+              position: absolute;
+              cursor: pointer;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background-color: #ccc;
+              -webkit-transition: .4s;
+              transition: .4s;
+            }
+
+            .slider:before {
+              position: absolute;
+              content: "";
+              height: 26px;
+              width: 26px;
+              left: 4px;
+              bottom: 4px;
+              background-color: white;
+              -webkit-transition: .4s;
+              transition: .4s;
+            }
+
+            input:checked + .slider {
+              background-color: #2196F3;
+            }
+
+            input:focus + .slider {
+              box-shadow: 0 0 1px #2196F3;
+            }
+
+            input:checked + .slider:before {
+              -webkit-transform: translateX(26px);
+              -ms-transform: translateX(26px);
+              transform: translateX(26px);
+            }
+
+            /* Rounded sliders */
+            .slider.round {
+              border-radius: 34px;
+            }
+
+            .slider.round:before {
+              border-radius: 50%;
+            }
+
+            .ctrl_section {
+              display: inline;
+            }
+
+            .ui-widget-content {
+              color: #FFF;
+            }
+
+            .ui-accordion .ui-accordion-content {
+              padding: inherit;
+            }
+
+        </style>
+        
+        <title>Classy Loop Controller</title>
+    </head>
+    <body onload="init();">
+    
+    <table width="100%">
+      <tr><td colspan="4" align="center"><span style="font-size: 2em;"><img width="40px" src="/static/images/peppermint.svg"/> Classy Loop Controller</span></td></tr>
+      <tr>
+        <td align="center"><button class="w3-button tablink w3-red presetBtn" id="btnA" onclick="preset('A');">A</button></td>
+        <td align="center"><button class="w3-button tablink w3-green presetBtn" id="btnB" onclick="preset('B');">B</button></td>
+        <td align="center"><button class="w3-button tablink w3-blue presetBtn" id="btnC" onclick="preset('C');">C</button></td>
+        <td align="center"><button class="w3-button tablink w3-yellow presetBtn" id="btnD" onclick="preset('D');">D</button></td>
+      </tr>
+      <tr>
+        <td align="center"><button class="w3-button tablink w3-purple presetBtn" id="btnE" onclick="preset('E');">E</button></td>
+        <td align="center"><button class="w3-button tablink w3-orange presetBtn" id="btnF" onclick="preset('F');">F</button></td>
+        <td align="center"><button class="w3-button tablink w3-brown presetBtn" id="btnG" onclick="preset('G');">G</button></td>
+        <td align="center"><button class="w3-button tablink w3-pink presetBtn" id="btnH" onclick="preset('H');">H</button></td>
+      </tr>
+      <tr><td colspan="4"><canvas id="canvas" width="360" height="auto"></canvas></td></tr>
+      <tr><td><button onclick="needleTest();">Test Needle</button></td></tr>
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="startInput" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="stepInput" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="runInput" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="endInput" step="any" value="0" onkeydown="return false;"> secs</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="start"><x-knob value="0" min="0" max="1" divisions="100" id="startPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="step"><x-knob value="0" min="0" max="1" divisions="100" id="stepPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="run"><x-knob value="0" min="0" max="1" divisions="100" id="runPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="end"><x-knob value="0" min="0" max="1" divisions="100" id="endPoint" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center"><label for="startInput">Start</label></td>
+        <td align="center"><label for="stepInput">Step</label></td>
+        <td align="center"><label for="runInput">Runner</label></td>
+        <td align="center"><label for="endInput">End</label></td>
+      </tr>
+    </table>
+    <hr class="new1">
+    <table cellpadding='2'>
+      <tr>
+        <td align="center">Preset: <input size="3" id="presetID" value="A"/></td>
+        <td align="center"><button class="w3-button tablink w3-grey" id="saveBtn" onclick="playEdits();">Play</button></td>
+        <td align="center"><button class="w3-button tablink w3-grey" id="saveBtn" onclick="pause();">Pause</button></td>
+        <td align="center"><button class="w3-button tablink w3-grey" id="saveBtn" onclick="saveEdits();">Save</button></td>
+        <td align="center"><button class="w3-button tablink w3-grey" id="resetBtn" onclick="init();">Reset</button></td>
+      </tr>
+    </table>
+    <div id="accordion">
+  <h3>Sleep Intervals</h3>
+  <div class="ctrl_section">
+    <table width="100%"> 
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="sleep1Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="sleep2Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="sleep3Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="sleep4Input" step="any" value="0" onkeydown="return false;"> secs</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="sleep1"><x-knob value="1" min="0" max="12" divisions="20" id="sleep1Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="sleep2"><x-knob value="1" min="0" max="12" divisions="20" id="sleep2Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="sleep3"><x-knob value="1" min="0" max="12" divisions="20" id="sleep3Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="sleep4"><x-knob value="1" min="0" max="12" divisions="20" id="sleep4Point" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center">1. 
+          <label class="switch">
+            <input id="sleep1Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">2. 
+          <label class="switch">
+            <input id="sleep2Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">3. 
+          <label class="switch">
+            <input id="sleep3Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">4. 
+          <label class="switch">
+            <input id="sleep4Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+      </tr>
+      <tr><td colspan="4"><hr class="new1"></td></tr>
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="sleep5Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="sleep6Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="sleep7Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="sleep8Input" step="any" value="0" onkeydown="return false;"> secs</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="sleep5"><x-knob value="1" min="0" max="12" divisions="20" id="sleep5Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="sleep6"><x-knob value="1" min="0" max="12" divisions="20" id="sleep6Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="sleep7"><x-knob value="1" min="0" max="12" divisions="20" id="sleep7Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="sleep8"><x-knob value="1" min="0" max="12" divisions="20" id="sleep8Point" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center">5. 
+          <label class="switch">
+            <input id="sleep5Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">6. 
+          <label class="switch">
+            <input id="sleep6Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">7. 
+          <label class="switch">
+            <input id="sleep7Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">8. 
+          <label class="switch">
+            <input id="sleep8Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <h3>Rates</h3>
+  <div class="ctrl_section">
+   <table width="100%"> 
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="rate1Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="rate2Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="rate3Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="rate4Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="rate1"><x-knob value="1" min="0" max="12" divisions="20" id="rate1Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="rate2"><x-knob value="1" min="0" max="12" divisions="20" id="rate2Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="rate3"><x-knob value="1" min="0" max="12" divisions="20" id="rate3Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="rate4"><x-knob value="1" min="0" max="12" divisions="20" id="rate4Point" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center">1. 
+          <label class="switch">
+            <input id="rate1Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">2. 
+          <label class="switch">
+            <input id="rate2Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">3. 
+          <label class="switch">
+            <input id="rate3Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">4. 
+          <label class="switch">
+            <input id="rate4Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+      </tr>
+      <tr><td colspan="4"><hr class="new1"></td></tr>
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="rate5Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="rate6Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="rate7Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="rate8Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="rate5"><x-knob value="1" min="0" max="12" divisions="20" id="rate5Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="rate6"><x-knob value="1" min="0" max="12" divisions="20" id="rate6Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="rate7"><x-knob value="1" min="0" max="12" divisions="20" id="rate7Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="rate8"><x-knob value="1" min="0" max="12" divisions="20" id="rate8Point" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center">5. 
+          <label class="switch">
+            <input id="rate5Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">6. 
+          <label class="switch">
+            <input id="rate6Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">7. 
+          <label class="switch">
+            <input id="rate7Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">8. 
+          <label class="switch">
+            <input id="rate8Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <h3>Amplitudes</h3>
+  <div class="ctrl_section">
+    <table width="100%"> 
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="amp1Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="amp2Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="amp3Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="amp4Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="amp1"><x-knob value="1" min="0" max="12" divisions="20" id="amp1Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="amp2"><x-knob value="1" min="0" max="12" divisions="20" id="amp2Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="amp3"><x-knob value="1" min="0" max="12" divisions="20" id="amp3Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="amp4"><x-knob value="1" min="0" max="12" divisions="20" id="amp4Point" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center">1. 
+          <label class="switch">
+            <input id="amp1Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">2. 
+          <label class="switch">
+            <input id="amp2Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">3. 
+          <label class="switch">
+            <input id="amp3Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">4. 
+          <label class="switch">
+            <input id="amp4Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+      </tr>
+      <tr><td colspan="4"><hr class="new1"></td></tr>
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="amp5Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="amp6Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="amp7Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="amp8Input" step="any" value="0" onkeydown="return false;"> x100%</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="amp5"><x-knob value="1" min="0" max="12" divisions="20" id="amp5Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="amp6"><x-knob value="1" min="0" max="12" divisions="20" id="amp6Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="amp7"><x-knob value="1" min="0" max="12" divisions="20" id="amp7Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="amp8"><x-knob value="1" min="0" max="12" divisions="20" id="amp8Point" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center">5. 
+          <label class="switch">
+            <input id="amp5Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">6. 
+          <label class="switch">
+            <input id="amp6Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">7. 
+          <label class="switch">
+            <input id="amp7Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">8. 
+          <label class="switch">
+            <input id="amp8Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+      </tr>
+    </table>
+  </div>
+  
+  <h3>Pans</h3>
+  <div class="ctrl_section">
+    <table width="100%"> 
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="pan1Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="pan2Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="pan3Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="pan4Input" step="any" value="0" onkeydown="return false;"> secs</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="pan1"><x-knob value="1" min="0" max="12" divisions="20" id="pan1Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="pan2"><x-knob value="1" min="0" max="12" divisions="20" id="pan2Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="pan3"><x-knob value="1" min="0" max="12" divisions="20" id="pan3Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="pan4"><x-knob value="1" min="0" max="12" divisions="20" id="pan4Point" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center">1. 
+          <label class="switch">
+            <input id="pan1Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">2. 
+          <label class="switch">
+            <input id="pan2Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">3. 
+          <label class="switch">
+            <input id="pan3Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">4. 
+          <label class="switch">
+            <input id="pan4Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+      </tr>
+      <tr><td colspan="4"><hr class="new1"></td></tr>
+      <tr>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="pan5Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="pan6Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="pan7Input" step="any" value="0" onkeydown="return false;"> secs</td>
+        <td align="center"><input style="margin-left:  8px;" type="number" id="pan8Input" step="any" value="0" onkeydown="return false;"> secs</td>
+      </tr>
+      <tr>
+        <td align="center"><span id="pan5"><x-knob value="1" min="0" max="12" divisions="20" id="pan5Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="pan6"><x-knob value="1" min="0" max="12" divisions="20" id="pan6Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="pan7"><x-knob value="1" min="0" max="12" divisions="20" id="pan7Point" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="pan8"><x-knob value="1" min="0" max="12" divisions="20" id="pan8Point" class="grKnob"></x-knob></span></td>
+      </tr>
+      <tr>
+        <td align="center">5. 
+          <label class="switch">
+            <input id="pan5Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">6. 
+          <label class="switch">
+            <input id="pan6Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">7. 
+          <label class="switch">
+            <input id="pan7Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+        <td align="center">8. 
+          <label class="switch">
+            <input id="pan8Switch" type="checkbox" checked><span class="slider round"></span>
+          </label>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <h3>Effects</h3>
+  <div class="ctrl_section">
+    <h4>Echo</h4>
+    <table width="100%">
+    <tr>
+        <td align="center" rowspan="2" style="width: 25%;"> 
+          <label class="switch">
+            <input id="echoSwitch" type="checkbox" checked><span class="slider round"></span>
+          </label> 
+          <hr/>
+          <p>By Pass:</p>
+          <input type="checkbox" id="echo1" name="echo1" value="1"><label for="echo1"> 1.</label>
+          <input type="checkbox" id="echo2" name="echo2" value="1"><label for="echo2"> 2.</label>
+          <input type="checkbox" id="echo3" name="echo3" value="1"><label for="echo3"> 3.</label>
+          <input type="checkbox" id="echo4" name="echo4" value="1"><label for="echo4"> 4.</label><br/>
+          <input type="checkbox" id="echo5" name="echo5" value="1"><label for="echo5"> 5.</label>
+          <input type="checkbox" id="echo6" name="echo6" value="1"><label for="echo6"> 6.</label>
+          <input type="checkbox" id="echo7" name="echo7" value="1"><label for="echo7"> 7.</label>
+          <input type="checkbox" id="echo8" name="echo8" value="1"><label for="echo8"> 8.</label>
+       </td>
+        <td align="center">Phase: <input style="margin-left:  8px;" type="number" id="echoPhaseInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Mix: <input style="margin-left:  8px;" type="number" id="echoMixInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Decay: <input style="margin-left:  8px;" type="number" id="echoDecayInput" step="any" value="0" onkeydown="return false;"></td>
+      </tr>
+      <tr>
+        <td align="center"><span id="echoPhase"><x-knob value="0" min="0" max="1" divisions="100" id="echoPhasePoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="echoMix"><x-knob value="0" min="0" max="1" divisions="100" id="echoMixPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="echoDecay"><x-knob value="0" min="0" max="1" divisions="100" id="echoDecayPoint" class="grKnob"></x-knob></span></td>
+      </tr>
+    </table>
+    <hr class="new1">
+    <h4>Reverb</h4>
+    <table width="100%">
+    <tr>
+        <td align="center" rowspan="2" style="width: 25%;"> 
+          <label class="switch">
+            <input id="reverbSwitch" type="checkbox" checked><span class="slider round"></span>
+          </label> 
+          <hr/>
+          <p>By Pass:</p>
+          <input type="checkbox" id="reverb1" name="reverb1" value="1"><label for="reverb1"> 1.</label>
+          <input type="checkbox" id="reverb2" name="reverb2" value="1"><label for="reverb2"> 2.</label>
+          <input type="checkbox" id="reverb3" name="reverb3" value="1"><label for="reverb3"> 3.</label>
+          <input type="checkbox" id="reverb4" name="reverb4" value="1"><label for="reverb4"> 4.</label><br/>
+          <input type="checkbox" id="reverb5" name="reverb5" value="1"><label for="reverb5"> 5.</label>
+          <input type="checkbox" id="reverb6" name="reverb6" value="1"><label for="reverb6"> 6.</label>
+          <input type="checkbox" id="reverb7" name="reverb7" value="1"><label for="reverb7"> 7.</label>
+          <input type="checkbox" id="reverb8" name="reverb8" value="1"><label for="reverb8"> 8.</label>
+       </td>
+        <td align="center">Room: <input style="margin-left:  8px;" type="number" id="reverbRoomInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Mix: <input style="margin-left:  8px;" type="number" id="reverbMixInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Damp: <input style="margin-left:  8px;" type="number" id="reverbDampInput" step="any" value="0" onkeydown="return false;"></td>
+      </tr>
+      <tr>
+        <td align="center"><span id="reverbRoom"><x-knob value="0" min="0" max="1" divisions="100" id="reverbRoomPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="reverbMix"><x-knob value="0" min="0" max="1" divisions="100" id="reverbMixPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="reverbDamp"><x-knob value="0" min="0" max="1" divisions="100" id="reverbDampPoint" class="grKnob"></x-knob></span></td>
+      </tr>
+    </table>
+    <hr class="new1">
+    <h4>Distortion</h4>
+    <table width="100%">
+    <tr>
+        <td align="center" rowspan="2" style="width: 25%;"> 
+          <label class="switch">
+            <input id="distortionSwitch" type="checkbox" checked><span class="slider round"></span>
+          </label> 
+          <hr/>
+          <p>By Pass:</p>
+          <input type="checkbox" id="distortion1" name="distortion1" value="1"><label for="distortion1"> 1.</label>
+          <input type="checkbox" id="distortion2" name="distortion2" value="1"><label for="distortion2"> 2.</label>
+          <input type="checkbox" id="distortion3" name="distortion3" value="1"><label for="distortion3"> 3.</label>
+          <input type="checkbox" id="distortion4" name="distortion4" value="1"><label for="distortion4"> 4.</label><br/>
+          <input type="checkbox" id="distortion5" name="distortion5" value="1"><label for="distortion5"> 5.</label>
+          <input type="checkbox" id="distortion6" name="distortion6" value="1"><label for="distortion6"> 6.</label>
+          <input type="checkbox" id="distortion7" name="distortion7" value="1"><label for="distortion7"> 7.</label>
+          <input type="checkbox" id="distortion8" name="distortion8" value="1"><label for="distortion8"> 8.</label>
+       </td>
+        <td align="center">Amp: <input style="margin-left:  8px;" type="number" id="distortionAmpInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Mix: <input style="margin-left:  8px;" type="number" id="distortionMixInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Distort: <input style="margin-left:  8px;" type="number" id="distortionDistortInput" step="any" value="0" onkeydown="return false;"></td>
+      </tr>
+      <tr>
+        <td align="center"><span id="distortionAmp"><x-knob value="0" min="0" max="1" divisions="100" id="distortionAmpPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="distortionMix"><x-knob value="0" min="0" max="1" divisions="100" id="distortionMixPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="distortionDistort"><x-knob value="0" min="0" max="1" divisions="100" id="distortionDistortPoint" class="grKnob"></x-knob></span></td>
+      </tr>
+    </table>
+    <hr class="new1">
+    <h4>High Pass Filter</h4>
+    <table width="100%">
+    <tr>
+        <td align="center" rowspan="2" style="width: 25%;"> 
+          <label class="switch">
+            <input id="highpassSwitch" type="checkbox" checked><span class="slider round"></span>
+          </label> 
+          <hr/>
+          <p>By Pass:</p>
+          <input type="checkbox" id="highpass1" name="highpass1" value="1"><label for="highpass1"> 1.</label>
+          <input type="checkbox" id="highpass2" name="highpass2" value="1"><label for="highpass2"> 2.</label>
+          <input type="checkbox" id="highpass3" name="highpass3" value="1"><label for="highpass3"> 3.</label>
+          <input type="checkbox" id="highpass4" name="highpass4" value="1"><label for="highpass4"> 4.</label><br/>
+          <input type="checkbox" id="highpass5" name="highpass5" value="1"><label for="highpass5"> 5.</label>
+          <input type="checkbox" id="highpass6" name="highpass6" value="1"><label for="highpass6"> 6.</label>
+          <input type="checkbox" id="highpass7" name="highpass7" value="1"><label for="highpass7"> 7.</label>
+          <input type="checkbox" id="highpass8" name="highpass8" value="1"><label for="highpass8"> 8.</label>
+       </td>
+        <td align="center">Amp: <input style="margin-left:  8px;" type="number" id="highpassAmpInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Mix: <input style="margin-left:  8px;" type="number" id="highpassMixInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Cutoff: <input style="margin-left:  8px;" type="number" id="highpassCutoffInput" step="any" value="0" onkeydown="return false;"></td>
+      </tr>
+      <tr>
+        <td align="center"><span id="highpassAmp"><x-knob value="0" min="0" max="1" divisions="100" id="highpassAmpPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="highpassMix"><x-knob value="0" min="0" max="1" divisions="100" id="highpassMixPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="highpassCutoff"><x-knob value="0" min="0" max="1" divisions="100" id="highpassCutoffPoint" class="grKnob"></x-knob></span></td>
+      </tr>
+    </table>
+    <hr class="new1">
+    <h4>Low Pass Filter</h4>
+    <table width="100%">
+    <tr>
+        <td align="center" rowspan="2" style="width: 25%;"> 
+          <label class="switch">
+            <input id="lowpassSwitch" type="checkbox" checked><span class="slider round"></span>
+          </label> 
+          <hr/>
+          <p>By Pass:</p>
+          <input type="checkbox" id="lowpass1" name="lowpass1" value="1"><label for="lowpass1"> 1.</label>
+          <input type="checkbox" id="lowpass2" name="lowpass2" value="1"><label for="lowpass2"> 2.</label>
+          <input type="checkbox" id="lowpass3" name="lowpass3" value="1"><label for="lowpass3"> 3.</label>
+          <input type="checkbox" id="lowpass4" name="lowpass4" value="1"><label for="lowpass4"> 4.</label><br/>
+          <input type="checkbox" id="lowpass5" name="lowpass5" value="1"><label for="lowpass5"> 5.</label>
+          <input type="checkbox" id="lowpass6" name="lowpass6" value="1"><label for="lowpass6"> 6.</label>
+          <input type="checkbox" id="lowpass7" name="lowpass7" value="1"><label for="lowpass7"> 7.</label>
+          <input type="checkbox" id="lowpass8" name="lowpass8" value="1"><label for="lowpass8"> 8.</label>
+       </td>
+        <td align="center">Amp: <input style="margin-left:  8px;" type="number" id="lowpassAmpInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Mix: <input style="margin-left:  8px;" type="number" id="lowpassMixInput" step="any" value="0" onkeydown="return false;"></td>
+        <td align="center">Cutoff: <input style="margin-left:  8px;" type="number" id="lowpassCutoffInput" step="any" value="0" onkeydown="return false;"></td>
+      </tr>
+      <tr>
+        <td align="center"><span id="lowpassAmp"><x-knob value="0" min="0" max="1" divisions="100" id="lowpassAmpPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="lowpassMix"><x-knob value="0" min="0" max="1" divisions="100" id="lowpassMixPoint" class="grKnob"></x-knob></span></td>
+        <td align="center"><span id="lowpassCutoff"><x-knob value="0" min="0" max="1" divisions="100" id="lowpassCutoffPoint" class="grKnob"></x-knob></span></td>
+      </tr>
+    </table>
+  </div>
+  <h3>Help</h3>
+  <div class="ctrl_section">
+    <p>
+    The Classy controller allows you to change many aspects of a sound loop.
+    <p>
+    <ul>  
+      <li><b>Presets:</b> There are colored preset buttons at the top of the controller.  By touching one of the preset 
+    buttons you will active different settings for the loop.</li>
+      <li><b>Waveform display:</b> which parts of the sound wave are being played.</li>
+    </ul>
+    
+  </div>
+</div>
+  {% block javascript %}
+  <script type="text/javascript">
+    const loop_settings = {};
+    {% for preset_key, preset in presets.items() %}
+      loop_settings['{{ preset_key }}'] = JSON.parse('{{ preset | tojson | safe}}');
+
+    {% endfor %}
+
+    // waveform controls
+    document.getElementById('start').addEventListener('input', function(ev) {
+      changeStart();
+    });
+
+    document.getElementById('step').addEventListener('input', function(ev) {
+      changeStep();
+    });
+
+    document.getElementById('run').addEventListener('input', function(ev) {
+      changeRun();
+    });
+
+    document.getElementById('end').addEventListener('input', function(ev) {
+      changeEnd();
+    });
+    // end waveform controls
+
+
+    // sleep controls
+    document.getElementById('sleep1').addEventListener('input', function(ev) {
+      changeCtrl(1,'sleep');
+    });
+
+    document.getElementById('sleep2').addEventListener('input', function(ev) {
+      changeCtrl(2,'sleep');
+    });
+
+    document.getElementById('sleep3').addEventListener('input', function(ev) {
+      changeCtrl(3,'sleep');
+    });
+
+    document.getElementById('sleep4').addEventListener('input', function(ev) {
+      changeCtrl(4,'sleep');
+    });
+
+     document.getElementById('sleep5').addEventListener('input', function(ev) {
+      changeCtrl(5,'sleep');
+    });
+
+    document.getElementById('sleep6').addEventListener('input', function(ev) {
+      changeCtrl(6,'sleep');
+    });
+
+    document.getElementById('sleep7').addEventListener('input', function(ev) {
+      changeCtrl(7,'sleep');
+    });
+
+    document.getElementById('sleep8').addEventListener('input', function(ev) {
+      changeCtrl(8,'sleep');
+    });
+    // end sleep controls
+
+     // rate controls
+    document.getElementById('rate1').addEventListener('input', function(ev) {
+      changeCtrl(1,'rate');
+    });
+
+    document.getElementById('rate2').addEventListener('input', function(ev) {
+      changeCtrl(2,'rate');
+    });
+
+    document.getElementById('rate3').addEventListener('input', function(ev) {
+      changeCtrl(3,'rate');
+    });
+
+    document.getElementById('rate4').addEventListener('input', function(ev) {
+      changeCtrl(4,'rate');
+    });
+
+     document.getElementById('rate5').addEventListener('input', function(ev) {
+      changeCtrl(5,'rate');
+    });
+
+    document.getElementById('rate6').addEventListener('input', function(ev) {
+      changeCtrl(6,'rate');
+    });
+
+    document.getElementById('rate7').addEventListener('input', function(ev) {
+      changeCtrl(7,'rate');
+    });
+
+    document.getElementById('rate8').addEventListener('input', function(ev) {
+      changeCtrl(8,'rate');
+    });
+    // end rate controls
+
+     // amp controls
+    document.getElementById('amp1').addEventListener('input', function(ev) {
+      changeCtrl(1,'amp');
+    });
+
+    document.getElementById('amp2').addEventListener('input', function(ev) {
+      changeCtrl(2,'amp');
+    });
+
+    document.getElementById('amp3').addEventListener('input', function(ev) {
+      changeCtrl(3,'amp');
+    });
+
+    document.getElementById('amp4').addEventListener('input', function(ev) {
+      changeCtrl(4,'amp');
+    });
+
+     document.getElementById('amp5').addEventListener('input', function(ev) {
+      changeCtrl(5,'amp');
+    });
+
+    document.getElementById('amp6').addEventListener('input', function(ev) {
+      changeCtrl(6,'amp');
+    });
+
+    document.getElementById('amp7').addEventListener('input', function(ev) {
+      changeCtrl(7,'amp');
+    });
+
+    document.getElementById('amp8').addEventListener('input', function(ev) {
+      changeCtrl(8,'amp');
+    });
+    // end amp controls
+
+    // pan controls
+    document.getElementById('pan1').addEventListener('input', function(ev) {
+      changeCtrl(1,'pan');
+    });
+
+    document.getElementById('pan2').addEventListener('input', function(ev) {
+      changeCtrl(2,'pan');
+    });
+
+    document.getElementById('pan3').addEventListener('input', function(ev) {
+      changeCtrl(3,'pan');
+    });
+
+    document.getElementById('pan4').addEventListener('input', function(ev) {
+      changeCtrl(4,'pan');
+    });
+
+     document.getElementById('pan5').addEventListener('input', function(ev) {
+      changeCtrl(5,'pan');
+    });
+
+    document.getElementById('pan6').addEventListener('input', function(ev) {
+      changeCtrl(6,'pan');
+    });
+
+    document.getElementById('pan7').addEventListener('input', function(ev) {
+      changeCtrl(7,'pan');
+    });
+
+    document.getElementById('pan8').addEventListener('input', function(ev) {
+      changeCtrl(8,'pan');
+    });
+    // end pan controls
+
+    //effect controls
+    document.getElementById('echoPhase').addEventListener('input', function(ev) {
+      changeEffectCtrl('echoPhase');
+    });
+
+    document.getElementById('echoMix').addEventListener('input', function(ev) {
+      changeEffectCtrl('echoMix');
+    });
+
+    document.getElementById('echoDecay').addEventListener('input', function(ev) {
+      changeEffectCtrl('echoDecay');
+    });
+
+    document.getElementById('reverbRoom').addEventListener('input', function(ev) {
+      changeEffectCtrl('reverbRoom');
+    });
+
+    document.getElementById('reverbMix').addEventListener('input', function(ev) {
+      changeEffectCtrl('reverbMix');
+    });
+
+    document.getElementById('reverbDamp').addEventListener('input', function(ev) {
+      changeEffectCtrl('reverbDamp');
+    });
+
+    document.getElementById('distortionAmp').addEventListener('input', function(ev) {
+      changeEffectCtrl('distortionAmp');
+    });
+
+    document.getElementById('distortionMix').addEventListener('input', function(ev) {
+      changeEffectCtrl('distortionMix');
+    });
+
+    document.getElementById('distortionDistort').addEventListener('input', function(ev) {
+      changeEffectCtrl('distortionDistort');
+    });
+
+    document.getElementById('highpassAmp').addEventListener('input', function(ev) {
+      changeEffectCtrl('highpassAmp');
+    });
+
+    document.getElementById('highpassMix').addEventListener('input', function(ev) {
+      changeEffectCtrl('highpassMix');
+    });
+
+    document.getElementById('highpassCutoff').addEventListener('input', function(ev) {
+      changeEffectCtrl('highpassCutoff');
+    });
+
+    document.getElementById('lowpassAmp').addEventListener('input', function(ev) {
+      changeEffectCtrl('lowpassAmp');
+    });
+
+    document.getElementById('lowpassMix').addEventListener('input', function(ev) {
+      changeEffectCtrl('lowpassMix');
+    });
+
+    document.getElementById('lowpassCutoff').addEventListener('input', function(ev) {
+      changeEffectCtrl('lowpassCutoff');
+    });
+
+    // end effect controls
+
+
+    // initialize variables
+    var socket = io.connect('http://192.168.0.181:8080');
+    //var socket = io.connect('http://localhost:8080');
+    //sending data from the user via a socket.io
+    socket.on("test", function (data) {
+      data.forEach(obj => {
+        console.log("Yer : " + obj.yer + ", Lat : " + obj.lat + ", Long : " + obj.lng);
+      })
+    });
+
+    var presetID = "A";
+    var sampleLength = 0;
+    var startPct = 0;
+    var endPct = 0;
+    var runPct = 0;
+    var stepPct = 0;
+
+    var sleepBase = 'sleep1';
+    var sleepInput = 'sleep1Input';
+    var sleepPoint = 'sleep1Point';
+
+    var rateBase = 'rate1';
+    var rateInput = 'rate1Input';
+    var ratePoint = 'rate1Point';
+
+    var ampBase = 'amp1';
+    var ampInput = 'amp1Input';
+    var ampPoint = 'amp1Point';
+
+    var effectBase = 'effect1';
+    var effectInput = 'effect1Input';
+    var effectPoint = 'effect1Point';
+
+    var panBase = 'pan1';
+    var panInput = 'pan1Input';
+    var panPoint = 'pan1Point';
+
+    needlePct = 0;
+
+    function init() {
+      reset();
+      var canvas = document.getElementById('canvas');
+      var heightRatio = .25;
+      canvas.height = canvas.width * heightRatio;
+      startSecs = sampleLength*startPct;
+      endSecs = sampleLength - (sampleLength*endPct);
+      stepSecs = sampleLength*stepPct;
+      runSecs = sampleLength*runPct;
+      document.getElementById('startInput').value = startSecs;
+      document.getElementById('startPoint').value = startPct;
+      document.getElementById('stepInput').value = stepSecs;
+      document.getElementById('stepPoint').value = stepPct;
+      document.getElementById('runInput').value = runSecs;
+      document.getElementById('runPoint').value = runPct;
+      document.getElementById('endInput').value = endSecs;
+      document.getElementById('endPoint').value = endPct;
+      draw();
+    }
+
+    function preset(ID) {
+      presetID = ID;
+      init();
+    }
+
+    function reset() {
+      document.getElementById('presetID').value = presetID;
+      sampleLength = loop_settings[presetID]['sampleLength'];
+      startPct = loop_settings[presetID]['startPct'];
+      endPct = loop_settings[presetID]['endPct'];
+      runPct = loop_settings[presetID]['runPct'];
+      stepPct = loop_settings[presetID]['stepPct'];
+
+      //set sleep params
+      sleep = loop_settings[presetID]['sleep'];
+      var arrayLength = sleep.length;
+      for (var i = 0; i < arrayLength; i++) {
+        n = i + 1;
+        setCtrl(n,'sleep',sleep[i])
+      }
+
+      //set rate params
+      rate = loop_settings[presetID]['rate'];
+      var arrayLength = rate.length;
+      for (var i = 0; i < arrayLength; i++) {
+        n = i + 1;
+        setCtrl(n,'rate',rate[i])
+      }
+
+      //set amp params
+      amp = loop_settings[presetID]['amp'];
+      var arrayLength = amp.length;
+      for (var i = 0; i < arrayLength; i++) {
+        n = i + 1;
+        setCtrl(n,'amp',amp[i])
+      }
+
+      //set pan params
+      pan = loop_settings[presetID]['pan'];
+      var arrayLength = pan.length;
+      for (var i = 0; i < arrayLength; i++) {
+        n = i + 1;
+        setCtrl(n,'pan',pan[i])
+      }
+
+      //set effect params
+      effects = loop_settings[presetID]['effects'];
+      effects.forEach(effect => {
+        effectName = effect['name'];
+        // params
+        for (let key in effect['params']) {
+            setEffectCtrl(effectName,key,effect['params'][key]);
+        }
+        // status
+        switchVar = effectName + 'Switch';
+        switchElem = document.getElementById(switchVar);
+        if (effect['status'] == 1) {
+          switchElem.checked = true;
+        } else {
+          switchElem.checked = false;
+        }
+        // runs
+        runs = effect['runs'];
+        var arrayLength = runs.length;
+        for (var i = 0; i < arrayLength; i++) {
+          n = i + 1;
+          numtxt = n.toString();
+          runVar = effectName + numtxt;
+          runElem = document.getElementById(runVar);
+          if (runs[i] == 1) {
+            runElem.checked = true;
+          } else {
+            runElem.checked = false;
+          }
+        }
+      });
+    }
+
+    // this is the opposite of the reset method
+    function getCurrentLoop() {
+      document.getElementById('presetID').value = presetID;
+      loop = JSON.parse(JSON.stringify(loop_settings[presetID]));
+      // set scalars
+      if(loop.hasOwnProperty('startPct')) {
+         loop['startPct'] = startPct;
+      }
+      if(loop.hasOwnProperty('endPct')) {
+         loop['endPct'] = 1 - endPct;
+      }
+      if(loop.hasOwnProperty('stepPct')) {
+         loop['stepPct'] = stepPct;
+      }
+      if(loop.hasOwnProperty('runPct')) {
+         loop['runPct'] = runPct;
+      }
+      // set arrays
+      if(loop.hasOwnProperty('sleep')) {
+         loop['sleep'] = getCtrl('sleep');
+      }
+      if(loop.hasOwnProperty('rate')) {
+         loop['rate'] = getCtrl('rate');
+      }
+      if(loop.hasOwnProperty('amp')) {
+         loop['amp'] = getCtrl('amp');
+      }
+      if(loop.hasOwnProperty('pan')) {
+         loop['pan'] = getCtrl('pan');
+      }
+      // set Effects
+      // TBD
+      return loop;
+    }
+
+    function playEdits() {
+      loop = getCurrentLoop();
+      socket.emit('play', JSON.stringify(loop));
+    }
+
+    function saveEdits() {
+      alert("Saving current settings.");
+    }
+
+    function pause() {
+      loop = getCurrentLoop();
+      loop['amp'] = [0];
+      socket.emit('play', JSON.stringify(loop));
+    }
+
+    function draw() {
+      var ctx = document.getElementById('canvas').getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // left curtain
+      ctx.fillStyle = 'rgba(0, 0, 200, 0.3)';
+      ctx.fillRect(0, 0, startPct*canvas.width, 90);
+      // runner
+      ctx.fillStyle = 'rgba(0, 128, 0, 0.3)';
+      ctx.fillRect((startPct*canvas.width), 0, runPct*canvas.width, 90);
+      // step
+      ctx.fillStyle = 'rgba(255, 69, 0, 0.3)';
+      ctx.fillRect((startPct*canvas.width), 0, stepPct*canvas.width, 90);
+      // right curtain
+      ctx.fillStyle = 'rgba(0, 0, 200, 0.3)';
+      ctx.fillRect(canvas.width-(endPct*canvas.width), 0, canvas.width, 90);
+      // needle 
+      ctx.fillStyle = 'rgb(255, 0, 0)';
+      ctx.fillRect((needlePct*canvas.width), 0, 1, 90);
+    }
+
+    // Start Waveform control methods
+    function changeStart() {
+      startPct = document.getElementById('startPoint').value;
+      startSecs = sampleLength*startPct;
+      document.getElementById('startInput').value = startSecs;
+      draw();
+    }
+
+    function changeStep() {
+      stepPct = document.getElementById('stepPoint').value;
+      stepSecs = stepPct*sampleLength;
+      document.getElementById('stepInput').value = stepSecs;
+      draw();
+    }
+
+    function changeRun() {
+      runPct = document.getElementById('runPoint').value;
+      runSecs = runPct*sampleLength;
+      document.getElementById('runInput').value = runSecs;
+      draw();
+    }
+
+    function changeEnd() {
+      endPct = document.getElementById('endPoint').value;
+      endSecs = sampleLength - (sampleLength*endPct);
+      document.getElementById('endInput').value = endSecs;
+      draw();
+    }
+
+    function drawNeedle(start,rate,end) {
+      needlePct = start;
+      needleRate = rate;
+      needleEndPct = end;
+      draw();
+      myTimer=setInterval(changeNeedle,10);
+    }
+
+    function changeNeedle() {
+      // change needlePct
+      needlePct = needlePct + needleRate;
+      // stop the the animation if it runs out-of-canvas
+      if (needlePct > needleEndPct) {
+            needlePct=0
+            clearInterval(myTimer);
+      }
+      draw();
+    }
+
+    function needleTest() {
+      drawNeedle(0.25,0.001,0.5);
+    }
+
+    // End Waveform control methods
+
+    function changeCtrl(num,changeType) {
+      numtxt = num.toString();
+      base = changeType + numtxt;
+      input = base + 'Input';
+      point = base + 'Point';
+      changeVal = document.getElementById(point).value;
+      document.getElementById(input).value = changeVal;
+    }
+
+    function setCtrl(num,changeType,val) {
+      numtxt = num.toString();
+      base = changeType + numtxt;
+      input = base + 'Input';
+      point = base + 'Point';
+      document.getElementById(point).value = val;
+      document.getElementById(input).value = val;
+    }
+
+    function getCtrl(ctrl) {
+      i = 1;
+      const switches = [];
+      const points = [];
+      do {
+        iNum = i.toString();
+        switchID = ctrl + iNum + 'Switch';
+        switchEl = document.getElementById(switchID);
+        pointID = ctrl + iNum + 'Point';
+        pointEl = document.getElementById(pointID);
+        if (switchEl && pointEl) {
+          if (switchEl.checked) {
+           pointVal = pointEl.value;
+           points.push(pointVal);
+          }
+        }
+        i++;
+      } while (switchEl && pointEl);
+      return points;
+    }
+
+     function changeEffectCtrl(changeType) {
+      input = changeType + 'Input';
+      point = changeType + 'Point';
+      changeVal = document.getElementById(point).value;
+      document.getElementById(input).value = changeVal;
+    }
+
+     function setEffectCtrl(effectName,key,val) {
+      changeType = effectName + key;
+      input = changeType + 'Input';
+      point = changeType + 'Point';
+      document.getElementById(point).value = val;
+      document.getElementById(input).value = val;
+    }
+
+    
+
+</script>
+{% endblock %}
+</html>
